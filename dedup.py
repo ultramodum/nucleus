@@ -1,6 +1,13 @@
 import os
+import sys
 import hashlib
 from collections import Counter
+
+if len(sys.argv) != 2 or sys.argv[1] not in ('i', 's'):
+    print("Usage: python dedup.py [i|s]")
+    sys.exit(1)
+
+extension = '.' + sys.argv[1]
 
 def generate_hash(code_block):
     """Generate a hash for a given code block."""
@@ -61,13 +68,13 @@ def extract_code_blocks(file_path, hash_to_code, track_hashes=True):
     return code_hashes
 
 def count_hashes_in_directory(directory):
-    """Count hash occurrences in all .i files in the given directory."""
+    """Count hash occurrences in all relevant files in the given directory."""
     hash_counter = Counter()
     hash_to_code = {}
 
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith('.i'):
+            if file.endswith(extension):
                 file_path = os.path.join(root, file)
                 code_hashes = extract_code_blocks(file_path, hash_to_code)
                 hash_counter.update(hash for hash, _ in code_hashes)
@@ -78,7 +85,7 @@ def remove_frequent_code_blocks(directory, frequent_hashes):
     """Modify files by removing code blocks with high-frequency hashes."""
     for root, _, files in os.walk(directory):
         for file in files:
-            if not file.endswith('.i'):
+            if not file.endswith(extension):
                 continue
             file_path = os.path.join(root, file)
             new_lines = []
@@ -128,7 +135,7 @@ def remove_frequent_code_blocks(directory, frequent_hashes):
                 f.writelines(new_lines)
 
 def main(directory):
-    """Main entry: count, display, and optionally clean .i files."""
+    """Main entry: count, display, and optionally clean files."""
     hash_counter, hash_to_code = count_hashes_in_directory(directory)
 
     most_common_hashes = hash_counter.most_common(10)
@@ -149,5 +156,5 @@ def main(directory):
         print("Done.")
 
 if __name__ == "__main__":
-    directory_path = "/home/edward/Documents/Thesis/dedup/i/"
+    directory_path = f"/home/edward/Documents/Thesis/dedup/{sys.argv[1]}/"
     main(directory_path)
