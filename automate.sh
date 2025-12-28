@@ -1,150 +1,130 @@
 #!/bin/bash
 
+prefix=$HOME/thesis/
+
 if [[ "$#" -ne 3 ]]; then
-    echo "Usage:   $0 <software-path> <config> <type>"
-    echo "Example: ./automate.sh kernel/linux/tiny/ tiny i"
+    echo "Usage:   $0 <path> <config> <type>"
+    echo "Example: ./automate.sh kernels/linux/ tiny i"
     exit 1
 fi
 
-path="$1"
-conf="$2"
+suffix="$1"
+config="$2"
 type="$3"
 
-if [[ "$conf" != "tiny" && "$conf" != "x86" && "$conf" != "arm" && "$conf" != "riscv" && "$conf" != "full" ]]; then
-    echo "Architecture must be either 'tiny', 'x86', 'arm', 'riscv' or 'full'!"
-    exit 1
-fi
+if   [ "$type" = "i" ]; then ext="c"
+elif [ "$type" = "s" ]; then ext="S"
+else echo "[NOTICE] Type must be either 'i' or 's'!"; exit 1; fi
 
-if [[ "$type" != "i" && "$type" != "s" ]]; then
-    echo "Type must be either 'i' or 's'!"
-    exit 1
-fi
+affix=$prefix/$suffix/
+stages=$affix/stages/
+script=$prefix/script/
+configs=$script/configs/
 
-home="/home/edward/Documents/Thesis/"
-full=$home/$path
-script=$home/script
-configs=$script/configs
-
-cd $full
-mkdir -p stages/
-
-[ -d ./dump/ ] && rm -rf ./dump/* || mkdir -p ./dump/
-#[ -d $home/dedup/$type/ ] && rm -rf $home/dedup/$type/* || mkdir -p $home/dedup/$type/
-rm -rf stages/dedup/$type/ && mkdir -p stages/dedup/$type/
-rm -rf stages/norm/$type/  && mkdir -p stages/norm/$type/
-rm -rf stages/final/$type/ && mkdir -p stages/final/$type/
-
-if [ "$type" = "i" ]; then
-    ext="c"
-else
-    ext="S"
-fi
-
-: > make-$type.sh
-
-skip=false
+cd $affix 2>/dev/null || { echo "[NOTICE] No such directory."; exit 1; }
+#: > run-$type.sh
 
 ############### KERNELS ###############
-if [[ "$path" == *linux* ]]; then
-    source $configs/kernel/linux.sh
+if [[ "$suffix" == *linux* ]]; then
+    source $configs/kernels/linux.sh
 
-elif [[ "$path" == *unikraft* ]]; then
-    source $configs/kernel/unikraft.sh
+elif [[ "$suffix" == *unikraft* ]]; then
+    source $configs/kernels/unikraft.sh
 
-elif [[ "$path" == *genode* ]]; then
-    source $configs/kernel/genode.sh
-    $type="ii"
+elif [[ "$suffix" == *genode* ]]; then
+    source $configs/kernels/genode.sh
 
-elif [[ "$path" == *fiwix* ]]; then
+elif [[ "$suffix" == *zephyr* ]]; then
+    source $configs/kernels/zephyr.sh
+
+elif [[ "$suffix" == *fiwix* ]]; then
     make V=1 -j$(nproc) >> make.log
-    $script/pathify.sh
-    skip=true
-
+    source $script/pathify.sh
 
 ############### FIRMWARE ###############
-elif [[ "$path" == *coreboot* ]]; then
-    $configs/firmware/coreboot.sh
+elif [[ "$suffix" == *coreboot* ]]; then
+    source $configs/firmware/coreboot.sh
 
-elif [[ "$path" == *libreboot* ]]; then
-    $configs/firmware/libreboot.sh
+elif [[ "$suffix" == *libreboot* ]]; then
+    source $configs/firmware/libreboot.sh
 
-elif [[ "$path" == *tianocore* ]]; then
-    $configs/firmware/tianocore.sh
-
+elif [[ "$suffix" == *tianocore* ]]; then
+    source $configs/firmware/tianocore.sh
 
 ############### BOOTLOADERS ###############
-elif [[ "$path" == *grub* ]]; then
-    $configs/bootloader/grub.sh
+elif [[ "$suffix" == *grub* ]]; then
+    source $configs/bootloader/grub.sh
 
-elif [[ "$path" == *uboot* ]]; then
-    $configs/bootloader/uboot.sh
+elif [[ "$suffix" == *uboot* ]]; then
+    source $configs/bootloader/uboot.sh
 
-elif [[ "$path" == *limine* ]]; then
-    $configs/bootloader/limine.sh
+elif [[ "$suffix" == *limine* ]]; then
+    source $configs/bootloader/limine.sh
 
-elif [[ "$path" == *barebox* ]]; then
-    $configs/bootloader/barebox.sh
-
+elif [[ "$suffix" == *barebox* ]]; then
+    source $configs/bootloader/barebox.sh
 
 ############### CRYPTOLIBS ###############
-elif [[ "$path" == *openssl* ]]; then
-    $configs/cryptolib/openssl.sh
+elif [[ "$suffix" == *openssl* ]]; then
+    source $configs/cryptolib/openssl.sh
 
-elif [[ "$path" == *wolfssl* ]]; then
-    $configs/cryptolib/wolfssl.sh
+elif [[ "$suffix" == *wolfssl* ]]; then
+    source $configs/cryptolib/wolfssl.sh
 
-elif [[ "$path" == *mbedtls* ]]; then
-    $configs/cryptolib/mbedtls.sh
-
+elif [[ "$suffix" == *mbedtls* ]]; then
+    source $configs/cryptolib/mbedtls.sh
 
 else
-    echo "Path does not contain a supported piece of software, such as 'linux'."
+    echo "[NOTICE] Path must contain supported software:"
+    echo "- KERNELS: Linux, Unikraft, Genode, Fiwix"
+    echo "- FIRMWARE: Coreboot, Libreboot, Tianocore"
+    echo "- BOOTLOADERS: GRUB, Uboot, Limine, Barebox"
+    echo "- CRYPTOLIBRARIES: OpenSSL, WolfSSL, MbedTLS"
     exit 1
 fi
 
-echo -e "\a"
 
-if ! $skip; then
-    chmod +x make-$type.sh
-    echo "Compiling relevant files..."
-    $script/wrapper.sh
-    echo -e "\a"
-fi
+source $script/output.sh
 
-cd ./dump/
-prepro=$(scc --include-ext i 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
-find . -name "*.$type" -exec cp {} $full/stages/dedup/$type/ \;
+mkdir -p ./dump/
+mkdir -p ./stages/dedup/$type/
+mkdir -p ./stages/norm/$type/
+mkdir -p ./stages/final/$type/
 
-echo "Deduplicating..."
-cd $full/stages/dedup/$type/
+echo -e "\aPreprocessing..."
+: <<'COMMENT'
+source $script/traverse.sh
+source $script/copy.sh $affix/dump/ $stages/dedup/$type/ i ii
+
+echo -e "\aDeduplicating..."
+cd $stages/dedup/$type/
 python3 $script/deduplicate.py
-dedup=$(scc --include-ext c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
-find . -name "includes.h" -exec cp {} $full/stages/norm/$type/ \;
-find . -name "*.$ext" -exec cp {} $full/stages/norm/$type/ \;
+source $script/copy.sh . $stages/norm/$type/ c h
 
-echo "Normalizing..."
-cd $full/stages/norm/$type/
+echo -e "\aNormalizing..."
+cd $stages/norm/$type/
 python3 $script/normalize.py includes.h
-norm=$(scc --include-ext c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
-find . -name "includes.h" -exec cp {} $full/stages/final/$type/ \;
-find . -name "*.$ext" -exec cp {} $full/stages/norm/$type/ \;
+source $script/copy.sh . $stages/final/$type/ c h
 
-echo "Pruning..."
-cd $full/stages/final/$type/
+echo -e "\aPruning..."
+cd $stages/final/$type/
 python3 $script/prune.py includes.h
-final=$(scc --include-ext c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
 
-nofpost=$(scc --include-ext c,h 2>/dev/null | awk '/^Total/ {print $(NF-5)}')
 
-echo
-#echo "Total LOC source:       $source"
-echo "-------------------------------"
-echo "Total LOC preprocessed: $prepro"
-echo "Total LOC deduplicated: $dedup"
-echo "Total LOC normalized:   $norm"
-echo "-------------------------------"
-echo "Total LOC final:        $final"
-echo
-#echo "Total NOF before:       $nofpre"
-echo "Total NOF after:        $nofpost"
-echo
+prepro=$(scc $stages/dedup/$type/ --include-ext i 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
+dedup=$(scc $stages/dedup/$type/ --include-ext cpp,cc,c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
+norm=$(scc $stages/norm/$type/ --include-ext cpp,cc,c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
+final=$(scc $stages/final/$type/ --include-ext cpp,cc,c,h 2>/dev/null | awk '/^Total/ {print $(NF-1)}')
+nofpos=$(scc $stages/final/$type/ --include-ext cpp,cc,c 2>/dev/null | awk '/^Total/ {print $(NF-5)}')
+
+echo "SLOC:  $source"
+echo "--------------"
+echo "PELOC: $prepro"
+echo "DELOC: $dedup"
+echo "NELOC: $norm"
+echo "--------------"
+echo "FELOC: $final"
+echo "=============="
+echo "SNOF:  $nofpre"
+echo "ENOF:  $nofpos"
+COMMENT

@@ -1,10 +1,9 @@
 # This script ensures that a file has the correct path before the corresponding
-# compile command is run. Note that this is a half-way solution, since include
-# paths may still be incomplete. Use wrapper.sh instead as it mitigates this.
+# compile command is run. Note that this is a half-way solution - include paths
+# may still be incomplete. Unless experimenting, always use the traverse script!
 
 #!/bin/bash
 
-# Convert make V=1 output into a runnable compile script with full .c paths
 awk '
 /Entering directory/ {
     cwd=$NF
@@ -21,6 +20,3 @@ awk '
     print $0, "-save-temps -dumpdir ./dump/"
 }
 ' make.log > make.sh
-
-chmod +x make.sh
-./make.sh

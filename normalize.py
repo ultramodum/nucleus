@@ -1,4 +1,4 @@
-# This script looks for duplicate line directives and removes them,
+# This script looks for identical line directives and removes them,
 # as well as the code that follows below until a new line directive.
 #
 # Note that this is typically performed after deduplication.
@@ -45,6 +45,7 @@ def main():
 
     with open(file, 'w') as f:
         f.writelines(output)
+
 
 if __name__ == "__main__":
     main()

@@ -2,19 +2,20 @@
 
 echo "Building Tianocore..."
 
-make -C BaseTools
 . edksetup.sh
+make -C BaseTools
+rm ./Build/ -rf
 
-if [[ "$conf" == "x86" ]]; then
-        build -p OvmfPkg/OvmfPkgX64.dsc -a X64 -t GCC5 -b RELEASE | grep -E "gcc.*\.${ext}$" | while read -r line; do
-        cmd="${line%%.${ext}*}.${ext} -save-temps -dumpdir ./dump/"
-        echo "$cmd" >> make-$type.sh
-    done
+if [[ "$config" == "x86" ]]; then
+    build -p ./OvmfPkg/OvmfPkgX64.dsc -a X64 -t GCC -b RELEASE >> make-$config.log
 
-elif [[ "$conf" == "arm" ]]; then
-    echo "ok"
+elif [[ "$config" == "arm" ]]; then
+    export GCC_AARCH64_PREFIX=aarch64-linux-gnu-
+    build -p ./ArmVirtPkg/ArmVirtQemu.dsc -a AARCH64 -t GCC -b RELEASE >> make-$config.log
 
 else
     echo "Not a supported config."
     exit 1
 fi
+
+grep -a -E "gcc.*\.${ext}($|[ ;\"])" make-$config.log | sed 's/$/ -save-temps/' >> run-$config.sh

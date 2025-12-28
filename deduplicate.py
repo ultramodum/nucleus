@@ -16,9 +16,11 @@ blocks = set()
 trash = []      # Lots of directives.
 
 def main(directory):
-    for root, dirs, files in os.walk(directory):
-        count = 0
+    numdirs = 0
+    numfiles = 0
+    totaldirs = sum(len(dirs) for _, dirs, _ in os.walk(directory))
 
+    for root, dirs, files in os.walk(directory):
         for file in files:
             path = os.path.join(root, file)
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -88,7 +90,7 @@ def main(directory):
                                     reset = True
 
                     # Go through all code (if any) below a source (.c) inclusion
-                    elif '.c"' in line:
+                    elif '.c"' or '.cc"' or '.cpp"' in line:
                         i += 1
                         if i >= len(lines): break
                         line = lines[i]
@@ -103,7 +105,7 @@ def main(directory):
 
                         if block:   # != []
                             name = os.path.splitext(path)[0]
-                            path = name + ".c"
+                            path = name + ".c" # FIX!!!
                             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
                             os.write(fd, "".join(block).encode())
                             os.close(fd)
@@ -117,20 +119,24 @@ def main(directory):
                     #trash.append(line)
                     i += 1
 
-            count += 1
-            if(count % 100 == 0): print(count, "files read...")
+            numfiles += 1
 
-        print(len(hashes), "hashes dicovered...")
+        for dir in dirs:
+            numdirs += 1
+            percent = (numdirs / totaldirs) * 100
+            print(f"[{numdirs}/{totaldirs}] ({percent:.2f}%) Now entering: {os.path.join(root, dir)}")
 
-        path = root + "includes.h"
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
+    print("Number of files:", numfiles)
+    print("Number of hashes:", len(hashes))
 
-        # Write header blocks
-        print("Writing unique blocks...\n")
-        for block in blocks:
-            os.write(fd, block.encode())
+    path = directory + "/includes.h"
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
 
-        os.close(fd)
+    # Write header blocks
+    for block in blocks:
+        os.write(fd, block.encode())
+
+    os.close(fd)
 
 
 if __name__ == "__main__":

@@ -2,13 +2,13 @@
 
 echo "Building WolfSSL..."
 
-if [[ "$conf" == "x86" ]]; then
+if [[ "$config" == "x86" ]]; then
     ./configure --host=x86_64-linux-gnu
 
-elif [[ "$conf" == "arm" ]]; then
+elif [[ "$config" == "arm" ]]; then
     ./configure --host=aarch64-linux-gnu CC=aarch64-linux-gnu-gcc
 
-elif [[ "$conf" == "riscv" ]]; then
+elif [[ "$config" == "riscv" ]]; then
     ./configure --host=riscv64-linux-gnu CC=riscv64-linux-gnu-gcc
 
 else
