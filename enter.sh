@@ -3,7 +3,7 @@
 
 #!/usr/bin/env bash
 
-home=/home/edward/thesis/firmware/coreboot/
+home=/home/edward/thesis/.../
 
 while IFS= read -r line; do
     cd $home
