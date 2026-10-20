@@ -26,7 +26,7 @@ Nucleus is a command-line utility that automates the process of counting the uni
 
 ## Motivation
 
-Think of any piece of software running on your computer - a web browser, a code editor, or a music player. For most of these software artifacts, large codebases are managed by their developers, to accommodate a plethora of users and the myriad of systems on which they run the software.
+Think of any piece of software running on your computer — a web browser, a code editor, or a music player. For most of these software artifacts, large codebases are managed by their developers, to accommodate a plethora of users and the myriad of systems on which they run the software.
 
 In academic circles, the size of a codebase is often used as a proxy for its complexity. There is a legitimate correlation here: the more code in a repository, the more complex it *tends to be*. Moreover, the entire codebase of a software artifact is often included in a trusted computing base (TCB) assessment of the system it runs on. The usual measure in both of these contexts is the total number of lines in the source repository — lines of code (LOC).
 

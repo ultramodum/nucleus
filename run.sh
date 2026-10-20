@@ -4,7 +4,7 @@ prefix=$HOME/thesis/
 
 if [[ "$#" -ne 3 ]]; then
     echo "Usage:   $0 <path> <config> <type>"
-    echo "Example: ./automate.sh kernels/linux/ tiny i"
+    echo "Example: ./run.sh kernels/linux/ tiny i"
     exit 1
 fi
 
